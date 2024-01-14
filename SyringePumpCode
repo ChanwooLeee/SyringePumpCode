@@ -1,0 +1,62 @@
+#include <AccelStepper.h>
+#include <ezButton.h>
+
+
+ezButton limitSwitch(5);  // create ezButton object that attach to pin 5;
+AccelStepper stepper(AccelStepper::DRIVER, 3, 2);  //pin input, step input
+
+
+//all the PIN numbers to match up with the LED in our circuit
+int red_LED = 12;
+int blue_LED = 9;  // This pin supports PWM
+int green_LED = 10; // This pin supports PWM
+
+
+double flowRate = 30;
+double radius = 2;
+double syringeEquation = 0; // Initialize syringeEquation
+
+
+//Plug button into this with the cricut
+int button = 4;
+
+
+void setup() {
+  Serial.begin(9600);
+  limitSwitch.setDebounceTime(50); // set debounce time to 50 milliseconds
+  stepper.setMaxSpeed(1000);  // Sets max step rate per second the Arduino can handle
+  stepper.setSpeed((int)(50)); // when run speed is called, the speed is set to a constant speed
+  pinMode(green_LED, OUTPUT);
+  pinMode(blue_LED, OUTPUT);
+  pinMode(red_LED, OUTPUT);
+  pinMode(button, INPUT_PULLUP); // sets the default pin value to HIGH meaning when pressed it switches to LOW
+
+
+  // Calculate syringeEquation value
+  syringeEquation = (flowRate * 100000) / (60 * 3.1415926 * radius * radius);
+}
+
+
+void loop() {
+  limitSwitch.loop(); // MUST call the loop first
+  int currentButtonState = digitalRead(button);
+  int currentLimitState = limitSwitch.getState();
+
+
+  if (currentLimitState == HIGH && currentButtonState == LOW) {  // checks if the button is pressed and switch is not pressed
+    stepper.runSpeed();
+    analogWrite(green_LED, 255);  // if the button is pressed the LED turns green
+    analogWrite(red_LED, 0);
+    analogWrite(blue_LED, 0);
+  }
+  if (currentLimitState == HIGH && currentButtonState == HIGH) {
+    analogWrite(green_LED, 150);  // if button is not pressed, then turn the light yellow
+    analogWrite(red_LED, 255);   // if button is not pressed, then turn the light yellow
+    analogWrite(blue_LED, 0);
+  }
+  if (currentLimitState == LOW) {
+    analogWrite(red_LED, 255);  // if the switch is pressed, then turn the light red
+    analogWrite(green_LED, 0);
+    analogWrite(blue_LED, 0);
+  }
+}
